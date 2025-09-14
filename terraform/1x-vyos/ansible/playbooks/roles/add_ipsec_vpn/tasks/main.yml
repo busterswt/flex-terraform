@@ -1,0 +1,53 @@
+- name: Configure IPsec Phase 1
+  vyos.vyos.vyos_config:
+    lines:
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} close-action 'start'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} key-exchange '{{ p1_exchange }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} lifetime '{{ p1_lifetime }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 dh-group '{{ p1_dh }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 encryption '{{ p1_encryption }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 hash '{{ p1_hash }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 prf '{{ p1_prf }}'"
+
+- name: Configure IPsec Phase 2
+  vyos.vyos.vyos_config:
+    lines:
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} lifetime '{{ p2_lifetime }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} mode '{{ p2_ipsec_mode }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} pfs '{{ p2_pfs }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 encryption '{{ p2_encryption }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 hash '{{ p2_hash }}'"
+
+- name: Configure Pre-Shared Key(s)
+  vyos.vyos.vyos_config:
+    lines:
+      - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} id '{{ local_peer }}'"
+      - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} id '{{ remote_peer }}'"
+      - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} secret 'vyos'"
+
+- name: Configure IPSec Interface(s)
+  vyos.vyos.vyos_config:
+    lines:
+      - "set vpn ipsec interface eth0"
+      - "set interfaces ethernet eth0 mtu 1500"
+      - "set interfaces vti vti{{ vti_num }} address {{ local_vti }}"
+      - "set vpn ipsec options disable-route-autoinstall"
+
+- name: Configure IPSec Peer
+  vyos.vyos.vyos_config:
+    lines:
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} vti bind vti{{ vti_num }}"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication local-id '{{ local_peer }}'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication mode 'pre-shared-secret'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication remote-id '{{ remote_peer }}'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} connection-type 'initiate'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} default-esp-group 'ESP-{{ remote_peer }}'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} ike-group 'IKE-{{ remote_peer }}'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} local-address '{{ local_peer_fixed }}'"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} remote-address '{{ remote_peer }}'"
+
+- name: Configure IPSec Routes(s)
+  vyos.vyos.vyos_config:
+    lines:
+      - "set protocol static route {{ item }} next-hop {{ remote_vti | ansible.utils.ipaddr('address') }}"
+  with_items: "{{ remote_networks }}"

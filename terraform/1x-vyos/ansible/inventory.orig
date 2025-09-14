@@ -1,0 +1,11 @@
+---
+all:
+  vars:
+    ansible_network_os: vyos.vyos.vyos
+    ansible_connection: ansible.netcommon.network_cli
+    ansible_user: vyos
+    ansible_ssh_private_key_file: /Users/james.denton/github/flex-terraform/terraform/id_rsa_mnaio.key
+vyos_hosts:
+  hosts:
+    fw_primary:
+      ansible_host: 50.56.157.196

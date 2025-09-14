@@ -1,0 +1,26 @@
+---
+# VPN Configuration
+
+remote_peer: 161.47.100.20
+local_peer: 50.56.157.196
+local_peer_fixed: 169.254.169.230
+# Phase 1
+p1_encryption: aes256
+p1_hash: sha256
+p1_prf: prfsha256
+p1_dh: 14
+p1_lifetime: 28800
+p1_exchange: ikev2
+# Phase 2
+p2_ipsec_mode: tunnel
+p2_encryption: aes256
+p2_hash: sha256
+p2_pfs: dh-group14
+p2_lifetime: 3600
+local_networks:
+  - 192.168.40.0/24
+remote_networks:
+  - 10.240.0.0/24
+local_vti: 10.0.0.1/30
+remote_vti: 10.0.0.2/30
+vti_num: 1

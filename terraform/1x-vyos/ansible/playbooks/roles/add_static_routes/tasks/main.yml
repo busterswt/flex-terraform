@@ -1,0 +1,20 @@
+- name: Gather listed static routes with provided configurations
+  vyos.vyos.vyos_static_routes:
+    config:
+    state: gathered
+  when: ansible_network_os == 'vyos.vyos.vyos'
+  register: existing_static_routes
+
+- name: Print existing routes
+  debug:
+    msg: "{{ existing_static_routes }}"
+
+- name: Retrieve VyOS version info
+  vyos.vyos.vyos_command:
+    commands: show version
+  when: ansible_network_os == 'vyos.vyos.vyos'
+  register: version
+
+- name: debug
+  debug:
+    msg: "{{ version }}"

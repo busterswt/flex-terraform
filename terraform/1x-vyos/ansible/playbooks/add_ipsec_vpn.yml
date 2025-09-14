@@ -1,0 +1,6 @@
+- name: Add IPSec to VyOS device(s)
+  hosts: "{{ target_hosts | default('vyos_hosts') }}"
+  connection: local
+#  gather_facts: no
+  roles:
+    - role: add_ipsec_vpn
