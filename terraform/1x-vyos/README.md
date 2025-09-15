@@ -15,7 +15,7 @@ Traffic from the Ubuntu VM will hairpin through the VyOS VM
 thanks to a route(s) placed on the Neutron router for
 interesting (vpn) traffic.
 
-[! NOTE]
+[!NOTE]
 The example here configures a route-based tunnel.
 
 To use this Terraform example, install OpenTofu or Terraform and modify

@@ -18,8 +18,4 @@ endpoint addresses, etc., then run the playbook:
 
 Example configurations for remote endpoints based on the configuration
 defined and deployed by this playbook can be found in the `examples`
-directory. 
-
-[! NOTE]
-
-cisco_asa_route_based_vpn.txt
+directory.
