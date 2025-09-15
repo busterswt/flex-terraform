@@ -1,0 +1,40 @@
+; configure group policy
+group-policy S2S-{{ local_peer }} internal
+group-policy S2S-{{ local_peer }} attributes
+ vpn-tunnel-protocol ikev2
+
+; configure tunnel group
+tunnel-group {{ local_peer }} type ipsec-l2l
+tunnel-group {{ local_peer }} general-attributes
+ default-group-policy S2S-{{ local_peer }}
+tunnel-group {{ local_peer }} ipsec-attributes
+ ikev2 remote-authentication pre-shared-key {{ remote_peer | b64encode }}
+ ikev2 local-authentication pre-shared-key {{ remote_peer | b64encode }}
+
+crypto {{ asa_p1_exchange }} policy 200
+ encryption {{ asa_p1_encryption }}
+ integrity {{ asa_p1_hash }}
+ group {{ asa_p1_dh }}
+ prf sha256
+ lifetime seconds {{ p1_lifetime }}
+
+crypto ipsec ikev2 ipsec-proposal IKEV2-IPSEC-{{ local_peer }}
+ protocol esp encryption {{ asa_p2_encryption }}
+ protocol esp integrity {{ asa_p2_hash }}
+crypto ipsec profile IKEV2-S2S-{{ local_peer }}
+ set ikev2 ipsec-proposal IKEV2-IPSEC-{{ local_peer }}
+ set security-association lifetime kilobytes unlimited
+ set security-association lifetime seconds {{ p2_lifetime }}
+ set pfs group14
+
+
+interface Tunnel{{ asa_vti_num }}
+ nameif VTI-VyOS
+ ip address {{ remote_vti | ansible.utils.ipaddr('address') }} {{ remote_vti | ansible.utils.ipaddr('netmask') }}
+ tunnel source interface OUTSIDE
+ tunnel destination {{ local_peer }}
+ tunnel mode ipsec ipv4
+ tunnel protection ipsec profile IKEV2-S2S-{{ local_peer }}
+
+; interesting traffic to be routed over vpn
+route VTI-VyOS 192.168.40.0 255.255.255.0 {{ local_vti | ansible.utils.ipaddr('address') }} 1

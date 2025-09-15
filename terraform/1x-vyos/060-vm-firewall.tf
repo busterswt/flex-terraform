@@ -23,9 +23,19 @@ resource "openstack_networking_port_v2" "fw-primary-port-outside" {
   fixed_ip {
     subnet_id = openstack_networking_subnet_v2.transit_network.id
   }
-  allowed_address_pairs {
-    ip_address = var.vpn_route["destination"]
-  }
+#  allowed_address_pairs {
+#    ip_address = var.vpn_route["destination"]
+#  }
+}
+
+output "fw-primary-port-outside-name" {
+  value       = openstack_networking_port_v2.fw-primary-port-outside.name
+  description = "Port name of the firewall's outside interface"
+}
+
+output "fw-primary-port-outside-network-name" {
+  value       = openstack_networking_network_v2.transit_network.name
+  description = "Network name of the firewall's outside interface"
 }
 
 #### Floating IPs ####

@@ -1,42 +1,54 @@
+- name: Get FW Port ID from tofu
+  ansible.builtin.command:
+    cmd: "tofu output -raw fw-primary-port-outside-name"
+    chdir: "{{ inventory_dir }}/../"
+  register: fw_primary_port_outside_name
+
+- name: Get FW Network name from tofu
+  ansible.builtin.command:
+    cmd: "tofu output -raw fw-primary-port-outside-network-name"
+    chdir: "{{ inventory_dir }}/../"
+  register: fw_primary_port_outside_network_name
+
 - name: Configure IPsec Phase 1
   vyos.vyos.vyos_config:
     lines:
       - "set vpn ipsec ike-group IKE-{{ remote_peer }} close-action 'start'"
-      - "set vpn ipsec ike-group IKE-{{ remote_peer }} key-exchange '{{ p1_exchange }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} key-exchange '{{ vyos_p1_exchange }}'"
       - "set vpn ipsec ike-group IKE-{{ remote_peer }} lifetime '{{ p1_lifetime }}'"
-      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 dh-group '{{ p1_dh }}'"
-      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 encryption '{{ p1_encryption }}'"
-      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 hash '{{ p1_hash }}'"
-      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 prf '{{ p1_prf }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 dh-group '{{ vyos_p1_dh }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 encryption '{{ vyos_p1_encryption }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 hash '{{ vyos_p1_hash }}'"
+      - "set vpn ipsec ike-group IKE-{{ remote_peer }} proposal 10 prf '{{ vyos_p1_prf }}'"
 
 - name: Configure IPsec Phase 2
   vyos.vyos.vyos_config:
     lines:
       - "set vpn ipsec esp-group ESP-{{ remote_peer }} lifetime '{{ p2_lifetime }}'"
-      - "set vpn ipsec esp-group ESP-{{ remote_peer }} mode '{{ p2_ipsec_mode }}'"
-      - "set vpn ipsec esp-group ESP-{{ remote_peer }} pfs '{{ p2_pfs }}'"
-      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 encryption '{{ p2_encryption }}'"
-      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 hash '{{ p2_hash }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} mode '{{ vyos_p2_ipsec_mode }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} pfs '{{ vyos_p2_pfs }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 encryption '{{ vyos_p2_encryption }}'"
+      - "set vpn ipsec esp-group ESP-{{ remote_peer }} proposal 10 hash '{{ vyos_p2_hash }}'"
 
 - name: Configure Pre-Shared Key(s)
   vyos.vyos.vyos_config:
     lines:
       - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} id '{{ local_peer }}'"
       - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} id '{{ remote_peer }}'"
-      - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} secret 'vyos'"
+      - "set vpn ipsec authentication psk PSK-KEY-{{ remote_peer | regex_replace('\\.', '-') }} secret '{{ remote_peer | b64encode }}'"
 
 - name: Configure IPSec Interface(s)
   vyos.vyos.vyos_config:
     lines:
       - "set vpn ipsec interface eth0"
       - "set interfaces ethernet eth0 mtu 1500"
-      - "set interfaces vti vti{{ vti_num }} address {{ local_vti }}"
+      - "set interfaces vti vti{{ vyos_vti_num }} address {{ local_vti }}"
       - "set vpn ipsec options disable-route-autoinstall"
 
 - name: Configure IPSec Peer
   vyos.vyos.vyos_config:
     lines:
-      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} vti bind vti{{ vti_num }}"
+      - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} vti bind vti{{ vyos_vti_num }}"
       - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication local-id '{{ local_peer }}'"
       - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication mode 'pre-shared-secret'"
       - "set vpn ipsec site-to-site peer PEER-{{ remote_peer | regex_replace('\\.', '-') }} authentication remote-id '{{ remote_peer }}'"
@@ -51,3 +63,19 @@
     lines:
       - "set protocol static route {{ item }} next-hop {{ remote_vti | ansible.utils.ipaddr('address') }}"
   with_items: "{{ remote_networks }}"
+
+- name: Update allowed-address-pairs on FW VM
+  openstack.cloud.port:
+    cloud: "{{ os_cloud }}"
+    name: "{{ fw_primary_port_outside_name.stdout }}"
+    network: "{{ fw_primary_port_outside_network_name.stdout }}"
+    state: present
+    allowed_address_pairs:
+      - ip_address: "{{ item }}"
+  with_items: "{{ remote_networks }}"
+  
+- name: Drop Cisco ASA Configuration Example
+  ansible.builtin.template:
+    src: cisco_asa_route_based_vpn.txt.j2
+    dest: "{{ inventory_dir }}/examples/cisco_asa_route_based_vpn.txt"
+    backup: yes

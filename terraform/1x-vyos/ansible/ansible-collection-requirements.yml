@@ -6,3 +6,4 @@ collections:
 - name: openstack.cloud
   version: ">=2.3.0"
 - name: vyos.vyos
+- name: cloud.terraform

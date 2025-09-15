@@ -1,0 +1,47 @@
+---
+# Defaults assume the following:
+#
+# protocol: ikev2
+# encryption: aes256
+# integrity: aes256
+# diffie-hellman: group14
+# Phase 1 lifetime: 28800
+# Phase 2 lifetime: 3600
+
+# Phase 1
+p1_lifetime: 28800
+p2_lifetime: 3600
+
+vyos_p1_encryption: aes256
+asa_p1_encryption: aes-256
+
+vyos_p1_hash: sha256
+asa_p1_hash: sha256
+
+vyos_p1_prf: prfsha256
+asa_p1_prf: sha256
+
+vyos_p1_dh: 14
+asa_p1_dh: 14
+
+vyos_p1_exchange: ikev2
+asa_p1_exchange: ikev2
+
+# Phase 2
+
+vyos_p2_ipsec_mode: tunnel
+
+vyos_p2_encryption: aes256
+asa_p2_encryption: aes-256
+
+vyos_p2_hash: sha256
+asa_p2_hash: sha-256
+
+vyos_p2_pfs: dh-group14
+asa_p2_pfs: group14
+
+local_vti: 10.0.0.1/30
+remote_vti: 10.0.0.2/30
+
+vyos_vti_num: 1
+asa_vti_num: 1

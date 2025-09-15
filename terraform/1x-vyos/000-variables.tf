@@ -5,31 +5,31 @@ resource "random_pet" "pet_name" {
 variable "vm_image" {
   type    = map(string)
   description = "The UUID and name of the server image"
-  default = {"uuid":"d8cdd44b-744d-4afa-83ef-ffdbfb259e12", "name":"Ubuntu 24.04 LTS"}
+  default = {}
 }
 
 variable "vm_flavor" {
   type    = string
-  description = "The UUID of the flavor to use for the server. Default: gp5.2.4"
-  default = "b5ccd490-b138-4d81-b8c3-c074287708e8"
+  description = "The UUID of the flavor to use for the server."
+  default = ""
 }
 
 variable "fw_image" {
   type    = map(string)
   description = "The UUID and name of the firewall image."
-  default = {"uuid":"8effec91-f5e3-4860-a1ed-4c7fe2fbcc46", "name":"VyOS 1.4.3"}
+  default = {}
 }
 
 variable "fw_flavor" {
   type    = string
-  description = "The UUID of the flavor to use for the firewall. Default: gp.5.2.2"
-  default = "d3a4a3f8-1aa3-4f9e-b08d-9081bb8aea08"
+  description = "The UUID of the flavor to use for the firewall."
+  default = ""
 }
 
 variable "external_network" {
   type    = map(string)
   description = "The NAME and UUID of an External Provider Network for Floating IPs (dict)."
-  default = {"uuid":"82be3711-cd97-4f7c-8bbd-59f5524a949e", "name":"PUBLICNET"}
+  default = {}
 }
 
 variable "dns_nameservers" {
@@ -72,8 +72,10 @@ variable "tenant_router" {
 # Routes #
 ##########
 
-variable "vpn_route" {
-  type    = map(string)
-  description = "The encryption domain"
-  default = {"destination":"10.240.0.0/24"}
+variable "vpn_routes" {
+  type = set(object({
+    destination = string
+  }))
+  description = "'Interesting' traffic for VPN"
+  default = []
 }

@@ -1,0 +1,48 @@
+
+vyos_hosts:
+  hosts:
+    fw_primary:
+      ansible_host: "${fw_float}"
+servers:
+  hosts:
+    server-1:
+      ansible_host: "${vm_float}"
+
+;Group Policy
+group-policy S2S-${local_peer} internal
+group-policy S2S-${local_peer} attributes
+ vpn-tunnel-protocol ikev2
+
+tunnel-group 50.56.157.196 type ipsec-l2l
+tunnel-group 50.56.157.196 general-attributes
+ default-group-policy S2S-50.56.157.196
+tunnel-group 50.56.157.196 ipsec-attributes
+ ikev2 remote-authentication pre-shared-key vyos
+ ikev2 local-authentication pre-shared-key vyos
+
+crypto ikev2 policy 200
+ encryption aes-256
+ integrity sha256
+ group 14
+ prf sha256
+ lifetime seconds 28800
+
+crypto ipsec ikev2 ipsec-proposal IKEV2-IPSEC-50.56.157.196
+ protocol esp encryption aes-256
+ protocol esp integrity sha-256
+crypto ipsec profile IKEV2-S2S-50.56.157.196
+ set ikev2 ipsec-proposal IKEV2-IPSEC-50.56.157.196
+ set security-association lifetime kilobytes unlimited
+ set security-association lifetime seconds 3600
+ set pfs group14
+
+
+interface Tunnel6
+ nameif VTI-VyOS
+ ip address 10.0.0.2 255.255.255.252
+ tunnel source interface OUTSIDE
+ tunnel destination 50.56.157.196
+ tunnel mode ipsec ipv4
+ tunnel protection ipsec profile IKEV2-S2S-50.56.157.196
+
+route VTI-VyOS 192.168.40.0 255.255.255.0 10.0.0.1 1
